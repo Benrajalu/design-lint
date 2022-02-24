@@ -3,7 +3,8 @@ import {
   checkEffects,
   checkFills,
   checkStrokes,
-  checkType
+  checkType,
+  customCheckTextFills
   // customCheckTextFills,
   // uncomment this as an example of a custom lint function ^
 } from "./lintingFunctions";
@@ -131,6 +132,27 @@ figma.ui.onmessage = msg => {
       const layer = figma.getNodeById(item);
       // Using selection and viewport requires an array.
       nodesToBeSelected.push(layer);
+    });
+
+    // Moves the layer into focus and selects so the user can update it.
+    figma.currentPage.selection = nodesToBeSelected;
+    figma.viewport.scrollAndZoomIntoView(nodesToBeSelected);
+    figma.notify("Multiple layers selected", { timeout: 1000 });
+  }
+
+  if (msg.type === "select-multiple-hidden-layers") {
+    const layerArray = msg.nodeArray;
+    const nodesToBeSelected = [];
+
+    layerArray.forEach(item => {
+      const layer: BaseNode = figma.getNodeById(item);
+      const isNodeHidden =
+        !["DOCUMENT", "PAGE"].includes(layer.type) &&
+        !(layer as SceneNode).visible;
+      if (isNodeHidden) {
+        // Using selection and viewport requires an array.
+        nodesToBeSelected.push(layer);
+      }
     });
 
     // Moves the layer into focus and selects so the user can update it.
@@ -344,7 +366,7 @@ figma.ui.onmessage = msg => {
     const errors = [];
 
     checkType(node, errors);
-    checkFills(node, errors);
+    customCheckTextFills(node, errors);
 
     // We could also comment out checkFills and use a custom function instead
     // Take a look at line 122 in lintingFunction.ts for an example.

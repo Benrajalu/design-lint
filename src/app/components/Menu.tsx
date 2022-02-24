@@ -1,3 +1,4 @@
+/* tslint:disable:jsx-no-multiline-js */
 import * as React from "react";
 import { useState, useRef, useEffect } from "react";
 

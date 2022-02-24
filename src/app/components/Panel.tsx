@@ -12,12 +12,12 @@ function Panel(props) {
 
   // Reduce the size of our array of errors by removing
   // nodes with no errors on them.
-  let filteredErrorArray = props.errorArray.filter(
+  const filteredErrorArray = props.errorArray.filter(
     item => item.errors.length >= 1
   );
 
   filteredErrorArray.forEach(item => {
-    // Check each layer/node to see if an error that matches it's layer id
+    // Check each layer/node to see if an error that matches its layer id
     if (props.ignoredErrors.some(x => x.node.id === item.id)) {
       // When we know a matching error exists loop over all the ignored
       // errors until we find it.
@@ -48,7 +48,7 @@ function Panel(props) {
   };
 
   function handlePrevNavigation() {
-    let currentIndex = filteredErrorArray.findIndex(
+    const currentIndex = filteredErrorArray.findIndex(
       item => item.id === activeId.id
     );
     if (filteredErrorArray[currentIndex + 1] !== undefined) {
@@ -68,10 +68,10 @@ function Panel(props) {
   }
 
   function handleNextNavigation() {
-    let currentIndex = filteredErrorArray.findIndex(
+    const currentIndex = filteredErrorArray.findIndex(
       item => item.id === activeId.id
     );
-    let lastItem = currentIndex + filteredErrorArray.length - 1;
+    const lastItem = currentIndex + filteredErrorArray.length - 1;
 
     if (filteredErrorArray[currentIndex - 1] !== undefined) {
       activeId = filteredErrorArray[currentIndex - 1];
@@ -100,7 +100,8 @@ function Panel(props) {
   }
 
   function handleSelectAll(error) {
-    let nodesToBeSelected = [];
+    const nodesToBeSelected = [];
+    console.log("pouet");
 
     filteredErrorArray.forEach(node => {
       node.errors.forEach(item => {
@@ -126,7 +127,7 @@ function Panel(props) {
   }
 
   function handleIgnoreAll(error) {
-    let errorsToBeIgnored = [];
+    const errorsToBeIgnored = [];
 
     filteredErrorArray.forEach(node => {
       node.errors.forEach(item => {
@@ -153,10 +154,7 @@ function Panel(props) {
           transition={{ duration: 0.3, type: "tween" }}
           variants={variants}
         >
-          <PanelHeader
-            title={node.name}
-            handleHide={handleChange}
-          ></PanelHeader>
+          <PanelHeader title={node.name} handleHide={handleChange} />
 
           <div className="panel-body">
             {errors.length ? (
@@ -220,9 +218,7 @@ function Panel(props) {
           </div>
         </motion.div>
       )}
-      {isVisible ? (
-        <div className="overlay" onClick={handleChange}></div>
-      ) : null}
+      {isVisible ? <div className="overlay" onClick={handleChange} /> : null}
     </React.Fragment>
   );
 }

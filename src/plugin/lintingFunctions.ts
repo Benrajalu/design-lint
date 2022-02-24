@@ -1,3 +1,5 @@
+import { pipe } from "fp-ts/function";
+import * as Array from "fp-ts/Array";
 // Linting functions
 
 // Generic function for creating an error object to pass to the app.
@@ -113,8 +115,6 @@ export function checkRadius(node, errors, radiusValues) {
       return;
     }
   } else {
-    console.log(node.cornerRadius);
-    console.log(radiusValues);
     if (radiusValues.indexOf(node.cornerRadius) === -1) {
       return errors.push(
         createErrorObject(
@@ -134,13 +134,16 @@ export function checkRadius(node, errors, radiusValues) {
 // Custom Lint rule that isn't being used yet!
 // that ensures our text fills aren't using styles (design tokens) meant for backgrounds.
 export function customCheckTextFills(node, errors) {
+  const allStyles = figma.getLocalPaintStyles();
   // Here we create an array of style keys (https://www.figma.com/plugin-docs/api/PaintStyle/#key)
-  // that we want to make sure our text layers aren't using.
-  const fillsToCheck = [
-    "4b93d40f61be15e255e87948a715521c3ae957e6"
-    // To collect style keys, use a plugin like Inspector, or use console commands like figma.getLocalPaintStyles();
-    // in your design system file.
-  ];
+  // that we want to make sure our text layers are using.
+  const fillsToCheck = pipe(
+    allStyles,
+    Array.filter(paintStyle => paintStyle.name.includes("text")),
+    Array.map(
+      textPaintStyle => textPaintStyle.id.replace("S:", "").split(",")[0]
+    )
+  );
 
   let nodeFillStyle = node.fillStyleId;
 
@@ -152,26 +155,36 @@ export function customCheckTextFills(node, errors) {
         node, // Node object we use to reference the error (id, layer name, etc)
         "fill", // Type of error (fill, text, effect, etc)
         "Mixing two styles together", // Message we show to the user
-        "Multiple Styles" // Normally we return a hex value here
+        "Multiple Styles", // Normally we return a hex value here
+        "We can lint here. Ensure all the styles used are tokens"
       )
     );
   }
+
+  const currentStyle = pipe(
+    allStyles,
+    Array.filter(style => style.id === nodeFillStyle),
+    Array.map(current => current.name)
+  );
 
   // We strip the additional style key characters so we can check
   // to see if the fill is being used incorrectly.
   nodeFillStyle = nodeFillStyle.replace("S:", "");
   nodeFillStyle = nodeFillStyle.split(",")[0];
 
+  console.log(currentStyle);
+
   // If the node (layer) has a fill style, then check to see if there's an error.
   if (nodeFillStyle !== "") {
-    // If we find the layer has a fillStyle that matches in the array create an error.
-    if (fillsToCheck.includes(nodeFillStyle)) {
+    // If we find the layer has a fillStyle that doesn't match in the array create an error.
+    if (!fillsToCheck.includes(nodeFillStyle)) {
       return errors.push(
         createErrorObject(
           node, // Node object we use to reference the error (id, layer name, etc)
           "fill", // Type of error (fill, text, effect, etc)
-          "Incorrect text color use", // Message we show to the user
-          "Using a background color on a text layer" // Determines the fill, so we can show a hex value.
+          "Incorrect text color", // Message we show to the user
+          currentStyle[0] ? currentStyle[0] : "Not a text token!",
+          'Use semantic ".../text" tokens'
         )
       );
     }

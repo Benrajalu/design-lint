@@ -1,3 +1,4 @@
+/* tslint:disable:no-shadowed-variable jsx-no-multiline-js */
 import * as React from "react";
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
@@ -88,14 +89,14 @@ const App = ({}) => {
     setIsVisible(val);
   };
 
-  const updateLintRules = boolean => {
-    setLintVectors(boolean);
+  const updateLintRules = bool => {
+    setLintVectors(bool);
 
     parent.postMessage(
       {
         pluginMessage: {
           type: "update-lint-rules-from-settings",
-          boolean
+          bool
         }
       },
       "*"

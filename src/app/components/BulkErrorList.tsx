@@ -10,7 +10,7 @@ function BulkErrorList(props) {
   );
 
   filteredErrorArray.forEach(item => {
-    // Check each layer/node to see if an error that matches it's layer id
+    // Check each layer/node to see if an error that matches its layer id
     if (props.ignoredErrorArray.some(x => x.node.id === item.id)) {
       // When we know a matching error exists loop over all the ignored
       // errors until we find it.
@@ -74,10 +74,24 @@ function BulkErrorList(props) {
   };
 
   function handleSelectAll(error) {
+    console.log(error.nodes);
     parent.postMessage(
       {
         pluginMessage: {
           type: "select-multiple-layers",
+          nodeArray: error.nodes
+        }
+      },
+      "*"
+    );
+  }
+
+  function handleSelectAllHidden(error) {
+    console.log(error.nodes);
+    parent.postMessage(
+      {
+        pluginMessage: {
+          type: "select-multiple-hidden-layers",
           nodeArray: error.nodes
         }
       },
@@ -151,6 +165,10 @@ function BulkErrorList(props) {
                 {
                   label: `Select All (${error.count})`,
                   event: handleSelectAll
+                },
+                {
+                  label: `Select All hidden from (${error.count}) errors`,
+                  event: handleSelectAllHidden
                 },
                 {
                   label: "Ignore",

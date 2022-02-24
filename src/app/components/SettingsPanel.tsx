@@ -1,7 +1,6 @@
 import * as React from "react";
 import { motion } from "framer-motion";
 import PanelHeader from "./PanelHeader";
-import SettingsForm from "./SettingsForm";
 import "../styles/panel.css";
 
 function SettingsPanel(props) {
@@ -46,10 +45,10 @@ function SettingsPanel(props) {
         transition={{ duration: 0.3, type: "tween" }}
         variants={variants}
       >
-        <PanelHeader title={"Settings"} handleHide={handleHide}></PanelHeader>
+        <PanelHeader title={"Settings"} handleHide={handleHide} />
 
         <div className="settings-wrapper">
-          <SettingsForm borderRadiusValues={props.borderRadiusValues} />
+          {/*<SettingsForm borderRadiusValues={props.borderRadiusValues} />*/}
           <div className="settings-row">
             <h3 className="settings-title">Lint Vectors (Default Off)</h3>
             <div className="settings-label">

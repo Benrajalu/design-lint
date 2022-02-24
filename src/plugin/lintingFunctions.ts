@@ -1,12 +1,15 @@
 // Linting functions
 
 // Generic function for creating an error object to pass to the app.
-export function createErrorObject(node, type, message, value?) {
-  let error = {
+import { availableRadii } from "./tokenFunctions";
+
+export function createErrorObject(node, type, message, value?, rule?) {
+  const error = {
     message: "",
     type: "",
     node: "",
-    value: ""
+    value: "",
+    rule: ""
   };
 
   error.message = message;
@@ -17,32 +20,36 @@ export function createErrorObject(node, type, message, value?) {
     error.value = value;
   }
 
+  if (rule !== undefined) {
+    error.rule = rule;
+  }
+
   return error;
 }
 
 // Determine a nodes fills
 export function determineFill(fills) {
-  let fillValues = [];
+  const fillValues = [];
 
   fills.forEach(fill => {
     if (fill.type === "SOLID") {
-      let rgbObj = convertColor(fill.color);
-      fillValues.push(RGBToHex(rgbObj["r"], rgbObj["g"], rgbObj["b"]));
+      const rgbObj: any = convertColor(fill.color);
+      fillValues.push(RGBToHex(rgbObj.r, rgbObj.g, rgbObj.b));
     } else if (fill.type === "IMAGE") {
       fillValues.push("Image - " + fill.imageHash);
     } else {
       const gradientValues = [];
       fill.gradientStops.forEach(gradientStops => {
-        let gradientColorObject = convertColor(gradientStops.color);
+        const gradientColorObject: any = convertColor(gradientStops.color);
         gradientValues.push(
           RGBToHex(
-            gradientColorObject["r"],
-            gradientColorObject["g"],
-            gradientColorObject["b"]
+            gradientColorObject.r,
+            gradientColorObject.g,
+            gradientColorObject.b
           )
         );
       });
-      let gradientValueString = gradientValues.toString();
+      const gradientValueString = gradientValues.toString();
       fillValues.push(`${fill.type} ${gradientValueString}`);
     }
   });
@@ -52,7 +59,7 @@ export function determineFill(fills) {
 
 // Lint border radius
 export function checkRadius(node, errors, radiusValues) {
-  let cornerType = node.cornerRadius;
+  const cornerType = node.cornerRadius;
 
   if (typeof cornerType !== "symbol") {
     if (cornerType === 0) {
@@ -68,7 +75,8 @@ export function checkRadius(node, errors, radiusValues) {
           node,
           "radius",
           "Incorrect Top Left Radius",
-          node.topRightRadius
+          node.topRightRadius,
+          `Pick from these: ${availableRadii().join(", ")}`
         )
       );
     } else if (radiusValues.indexOf(node.topRightRadius) === -1) {
@@ -77,7 +85,8 @@ export function checkRadius(node, errors, radiusValues) {
           node,
           "radius",
           "Incorrect top right radius",
-          node.topRightRadius
+          node.topRightRadius,
+          `Pick from these: ${availableRadii().join(", ")}`
         )
       );
     } else if (radiusValues.indexOf(node.bottomLeftRadius) === -1) {
@@ -86,7 +95,8 @@ export function checkRadius(node, errors, radiusValues) {
           node,
           "radius",
           "Incorrect bottom left radius",
-          node.bottomLeftRadius
+          node.bottomLeftRadius,
+          `Pick from these: ${availableRadii().join(", ")}`
         )
       );
     } else if (radiusValues.indexOf(node.bottomRightRadius) === -1) {
@@ -95,20 +105,24 @@ export function checkRadius(node, errors, radiusValues) {
           node,
           "radius",
           "Incorrect bottom right radius",
-          node.bottomRightRadius
+          node.bottomRightRadius,
+          `Pick from these: ${availableRadii().join(", ")}`
         )
       );
     } else {
       return;
     }
   } else {
+    console.log(node.cornerRadius);
+    console.log(radiusValues);
     if (radiusValues.indexOf(node.cornerRadius) === -1) {
       return errors.push(
         createErrorObject(
           node,
           "radius",
           "Incorrect border radius",
-          node.cornerRadius
+          node.cornerRadius,
+          `Pick from these: ${availableRadii().join(", ")}`
         )
       );
     } else {
@@ -175,7 +189,7 @@ export function checkEffects(node, errors) {
       const effectsArray = [];
 
       node.effects.forEach(effect => {
-        let effectsObject = {
+        const effectsObject = {
           type: "",
           radius: "",
           offsetX: "",
@@ -198,14 +212,15 @@ export function checkEffects(node, errors) {
         }
 
         if (effect.color) {
-          let effectsFill = convertColor(effect.color);
+          const effectsFill: any = convertColor(effect.color);
           effectsObject.fill = RGBToHex(
-            effectsFill["r"],
-            effectsFill["g"],
-            effectsFill["b"]
+            effectsFill.r,
+            effectsFill.g,
+            effectsFill.b
           );
           effectsObject.offsetX = effect.offset.x;
           effectsObject.offsetY = effect.offset.y;
+          // tslint:disable-next-line:max-line-length
           effectsObject.value = `${effectsObject.type} ${effectsObject.fill} ${effectsObject.radius}px X: ${effectsObject.offsetX}, Y: ${effectsObject.offsetY}`;
         } else {
           effectsObject.value = `${effectsObject.type} ${effectsObject.radius}px`;
@@ -214,7 +229,7 @@ export function checkEffects(node, errors) {
         effectsArray.unshift(effectsObject);
       });
 
-      let currentStyle = effectsArray[0].value;
+      const currentStyle = effectsArray[0].value;
 
       return errors.push(
         createErrorObject(
@@ -255,7 +270,7 @@ export function checkFills(node, errors) {
 export function checkStrokes(node, errors) {
   if (node.strokes.length) {
     if (node.strokeStyleId === "" && node.visible === true) {
-      let strokeObject = {
+      const strokeObject = {
         strokeWeight: "",
         strokeAlign: "",
         strokeFills: []
@@ -265,10 +280,16 @@ export function checkStrokes(node, errors) {
       strokeObject.strokeAlign = node.strokeAlign;
       strokeObject.strokeFills = determineFill(node.strokes);
 
-      let currentStyle = `${strokeObject.strokeFills} / ${strokeObject.strokeWeight} / ${strokeObject.strokeAlign}`;
+      const currentStyle = `${strokeObject.strokeFills} / ${strokeObject.strokeWeight} / ${strokeObject.strokeAlign}`;
 
       return errors.push(
-        createErrorObject(node, "stroke", "Missing stroke style", currentStyle)
+        createErrorObject(
+          node,
+          "stroke",
+          "Missing stroke color style",
+          currentStyle,
+          "Use a design token for the stroke color"
+        )
       );
     } else {
       return;
@@ -278,7 +299,7 @@ export function checkStrokes(node, errors) {
 
 export function checkType(node, errors) {
   if (node.textStyleId === "" && node.visible === true) {
-    let textObject = {
+    const textObject = {
       font: "",
       fontStyle: "",
       fontSize: "",
@@ -296,7 +317,8 @@ export function checkType(node, errors) {
       textObject.lineHeight = "Auto";
     }
 
-    let currentStyle = `${textObject.font} ${textObject.fontStyle} / ${textObject.fontSize} (${textObject.lineHeight} line-height)`;
+    // tslint:disable-next-line:max-line-length
+    const currentStyle = `${textObject.font} ${textObject.fontStyle} / ${textObject.fontSize} (${textObject.lineHeight} line-height)`;
 
     return errors.push(
       createErrorObject(node, "text", "Missing text style", currentStyle)
@@ -329,9 +351,9 @@ function RGBToHex(r, g, b) {
   g = Number(g).toString(16);
   b = Number(b).toString(16);
 
-  if (r.length == 1) r = "0" + r;
-  if (g.length == 1) g = "0" + g;
-  if (b.length == 1) b = "0" + b;
+  if (r.length === 1) r = "0" + r;
+  if (g.length === 1) g = "0" + g;
+  if (b.length === 1) b = "0" + b;
 
   return "#" + r + g + b;
 }

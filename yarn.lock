@@ -74,6 +74,11 @@
   dependencies:
     any-observable "^0.3.0"
 
+"@talend/design-tokens@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@talend/design-tokens/-/design-tokens-1.2.0.tgz#fb272431c94a8a6bd6ae21b1c8f380c209f8cfc0"
+  integrity sha512-SnU8YMP6VhHv00tmMMUScsT+qIlTJOZSqunW5BQNIVsdAuCwrsmBu20w/UQnkPdl9nGLzqdqIFoqGoVKjj7/RQ==
+
 "@types/events@*":
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/@types/events/-/events-3.0.0.tgz#2862f3f58a9a7f7c3e78d79f130dd4d71c25c2a7"
@@ -1531,6 +1536,11 @@ for-in@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/for-in/-/for-in-1.0.2.tgz#81068d295a8142ec0ac726c6e2200c30fb6d5e80"
   integrity sha1-gQaNKVqBQuwKxybG4iAMMPttXoA=
+
+fp-ts@^2.11.8:
+  version "2.11.8"
+  resolved "https://registry.yarnpkg.com/fp-ts/-/fp-ts-2.11.8.tgz#411cde116c446d568f5597b03352d8b3f98e8f82"
+  integrity sha512-WQT6rP6Jt3TxMdQB3IKzvfZKLuldumntgumLhIUhvPrukTHdWNI4JgEHY04Bd0LIOR9IQRpB+7RuxgUU0Vhmcg==
 
 fragment-cache@^0.2.1:
   version "0.2.1"

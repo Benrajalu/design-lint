@@ -1,10 +1,11 @@
+/* tslint:disable:jsx-no-multiline-js */
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Menu from "./Menu";
 
 function BulkErrorList(props) {
   // Reduce the size of our array of errors by removing nodes with no errors on them.
-  let filteredErrorArray = props.errorArray.filter(
+  const filteredErrorArray = props.errorArray.filter(
     item => item.errors.length >= 1
   );
 
@@ -28,18 +29,18 @@ function BulkErrorList(props) {
     }
   });
 
-  let bulkErrorList = [];
+  const bulkErrorList = [];
 
   // Create the list we'll use to display all the errors in bulk.
   filteredErrorArray.forEach(item => {
-    let nodeErrors = item.errors;
+    const nodeErrors = item.errors;
 
     nodeErrors.forEach(error => {
       // Check to see if another error with this same value exists.
       if (bulkErrorList.some(e => e.value === error.value)) {
         // Find the error of this type that already exists.
-        let duplicateError = bulkErrorList.find(e => e.value === error.value);
-        let nodesThatShareErrors = duplicateError.nodes;
+        const duplicateError = bulkErrorList.find(e => e.value === error.value);
+        const nodesThatShareErrors = duplicateError.nodes;
         // Add the nodes id that share this error to the object
         // That way we can select them all at once.
         nodesThatShareErrors.push(error.node.id);
@@ -97,7 +98,7 @@ function BulkErrorList(props) {
   }
 
   function handleIgnoreAll(error) {
-    let errorsToBeIgnored = [];
+    const errorsToBeIgnored = [];
 
     filteredErrorArray.forEach(node => {
       node.errors.forEach(item => {
@@ -116,7 +117,7 @@ function BulkErrorList(props) {
 
   const errorListItems = bulkErrorList.map((error, index) => (
     <motion.li
-      positionTransition
+      positionTransition={true}
       className="error-list-item"
       key={error.node.id + index}
       variants={variants}
@@ -137,6 +138,9 @@ function BulkErrorList(props) {
             </div>
           ) : (
             <div className="error-description__message">{error.message}</div>
+          )}
+          {error.rule && (
+            <div className="error-rule__message">{error.rule}</div>
           )}
         </span>
         <span className="context-icon">
@@ -176,7 +180,9 @@ function BulkErrorList(props) {
         </span>
       </div>
 
-      {error.value ? <div className="current-value">{error.value}</div> : null}
+      {error.value ? (
+        <div className="current-value">Current value: {error.value}</div>
+      ) : null}
     </motion.li>
   ));
 

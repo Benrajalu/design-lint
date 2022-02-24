@@ -1,3 +1,4 @@
+/* tslint:disable:jsx-no-multiline-js */
 import * as React from "react";
 import classNames from "classnames";
 
@@ -8,7 +9,7 @@ function ListItem(props) {
   let errorObject = { errors: [] };
   let childErrorsCount = 0;
 
-  let filteredErrorArray = props.errorArray;
+  const filteredErrorArray = props.errorArray;
 
   // Check to see if this node has corresponding errors.
   if (filteredErrorArray.some(e => e.id === node.id)) {
@@ -20,30 +21,29 @@ function ListItem(props) {
     // Find errors in this node's children.
     childErrorsCount = findNestedErrors(node);
 
-    let reversedArray = node.children.slice().reverse();
-    childNodes = reversedArray.map(function(childNode) {
-      return (
-        <ListItem
-          ignoredErrorArray={props.ignoredErrorArray}
-          activeNodeIds={props.activeNodeIds}
-          selectedListItems={props.selectedListItems}
-          errorArray={filteredErrorArray}
-          onClick={onClick}
-          key={childNode.id}
-          node={childNode}
-        />
-      );
-    });
+    const reversedArray = node.children.slice().reverse();
+    childNodes = reversedArray.map(childNode => (
+      <ListItem
+        ignoredErrorArray={props.ignoredErrorArray}
+        activeNodeIds={props.activeNodeIds}
+        selectedListItems={props.selectedListItems}
+        errorArray={filteredErrorArray}
+        onClick={onClick}
+        key={childNode.id}
+        node={childNode}
+      />
+    ));
   }
 
   // Recursive function for finding the amount of errors
   // nested within this nodes children.
+  // tslint:disable-next-line:no-shadowed-variable
   function findNestedErrors(node) {
     let errorCount = 0;
 
     node.children.forEach(childNode => {
       if (filteredErrorArray.some(e => e.id === childNode.id)) {
-        let childErrorObject = filteredErrorArray.find(
+        const childErrorObject = filteredErrorArray.find(
           e => e.id === childNode.id
         );
         errorCount = errorCount + childErrorObject.errors.length;
@@ -82,7 +82,7 @@ function ListItem(props) {
           <img src={require("../assets/" + node.type.toLowerCase() + ".svg")} />
         </span>
         <span className="list-name">{node.name}</span>
-        {childErrorsCount >= 1 && <span className="dot"></span>}
+        {childErrorsCount >= 1 && <span className="dot" />}
         {errorObject.errors.length >= 1 && (
           <span className="badge">{errorObject.errors.length}</span>
         )}

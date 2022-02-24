@@ -1,3 +1,4 @@
+/* tslint:disable:jsx-no-multiline-js */
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Menu from "./Menu";
@@ -17,7 +18,7 @@ function ErrorList(props) {
 
   // Finds how many other nodes have this exact error.
   function countInstancesOfThisError(error) {
-    let nodesToBeSelected = [];
+    const nodesToBeSelected = [];
 
     props.allErrors.forEach(node => {
       node.errors.forEach(item => {
@@ -40,7 +41,7 @@ function ErrorList(props) {
 
   const errorListItems = props.errors.map((error, index) => (
     <motion.li
-      positionTransition
+      positionTransition={true}
       className="error-list-item"
       key={error.node.id + index}
       variants={variants}
@@ -56,6 +57,9 @@ function ErrorList(props) {
         </span>
         <span className="error-description">
           <div className="error-description__message">{error.message}</div>
+          {error.rule && (
+            <div className="error-rule__message">{error.rule}</div>
+          )}
         </span>
         <span className="context-icon">
           {countInstancesOfThisError(error) > 1 ? (
@@ -94,7 +98,9 @@ function ErrorList(props) {
         </span>
       </div>
 
-      {error.value ? <div className="current-value">{error.value}</div> : null}
+      {error.value ? (
+        <div className="current-value">Current value: {error.value}</div>
+      ) : null}
     </motion.li>
   ));
 

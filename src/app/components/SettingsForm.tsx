@@ -42,7 +42,7 @@ function SettingsForm(props) {
 
         <div className="input-icon">
           <div className="input-icon__icon">
-            <div className="icon icon--corner-radius icon--black-3"></div>
+            <div className="icon icon--corner-radius icon--black-3" />
           </div>
           <input
             type="input"

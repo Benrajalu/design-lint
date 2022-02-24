@@ -142,6 +142,10 @@
   align-self: center;
 }
 
+.error-rule__message {
+  font-size: 0.8em;
+}
+
 .error-type img {
   height: 13px;
   width: 13px;

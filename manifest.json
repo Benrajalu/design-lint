@@ -1,5 +1,5 @@
 {
-  "name": "Design Lint",
+  "name": "Design Lint for Coral",
   "id": "801195587640428208",
   "api": "1.0.0",
   "main": "dist/code.js",

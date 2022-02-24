@@ -7,18 +7,19 @@ import {
   // customCheckTextFills,
   // uncomment this as an example of a custom lint function ^
 } from "./lintingFunctions";
+import { availableRadii } from "./tokenFunctions";
 
 figma.showUI(__html__, { width: 360, height: 580 });
 
-let borderRadiusArray = [0, 2, 4, 8, 16, 24, 32];
+let borderRadiusArray = [0, ...availableRadii()];
 let originalNodeTree = [];
 let lintVectors = false;
 
 figma.ui.onmessage = msg => {
   // Fetch a specific node by ID.
   if (msg.type === "fetch-layer-data") {
-    let layer = figma.getNodeById(msg.id);
-    let layerArray = [];
+    const layer = figma.getNodeById(msg.id);
+    const layerArray = [];
 
     // Using selection and viewport requires an array.
     layerArray.push(layer);
@@ -28,7 +29,7 @@ figma.ui.onmessage = msg => {
     figma.currentPage.selection = layerArray;
     figma.viewport.scrollAndZoomIntoView(layerArray);
 
-    let layerData = JSON.stringify(layer, [
+    const layerData = JSON.stringify(layer, [
       "id",
       "name",
       "description",
@@ -59,14 +60,14 @@ figma.ui.onmessage = msg => {
   // Updates client storage with a new ignored error
   // when the user selects "ignore" from the context menu
   if (msg.type === "update-storage") {
-    let arrayToBeStored = JSON.stringify(msg.storageArray);
+    const arrayToBeStored = JSON.stringify(msg.storageArray);
     figma.clientStorage.setAsync("storedErrorsToIgnore", arrayToBeStored);
   }
 
   // Clears all ignored errors
   // invoked from the settings menu
   if (msg.type === "update-storage-from-settings") {
-    let arrayToBeStored = JSON.stringify(msg.storageArray);
+    const arrayToBeStored = JSON.stringify(msg.storageArray);
     figma.clientStorage.setAsync("storedErrorsToIgnore", arrayToBeStored);
 
     figma.ui.postMessage({
@@ -84,7 +85,7 @@ figma.ui.onmessage = msg => {
 
   // For when the user updates the border radius values to lint from the settings menu.
   if (msg.type === "update-border-radius") {
-    let newString = msg.radiusValues.replace(/\s+/g, "");
+    const newString = msg.radiusValues.replace(/\s+/g, "");
     let newRadiusArray = newString.split(",");
     newRadiusArray = newRadiusArray
       .filter(x => x.trim().length && !isNaN(x))
@@ -99,7 +100,7 @@ figma.ui.onmessage = msg => {
     borderRadiusArray = newRadiusArray;
 
     // Save this value in client storage.
-    let radiusToBeStored = JSON.stringify(borderRadiusArray);
+    const radiusToBeStored = JSON.stringify(borderRadiusArray);
     figma.clientStorage.setAsync("storedRadiusValues", radiusToBeStored);
 
     figma.ui.postMessage({
@@ -111,7 +112,7 @@ figma.ui.onmessage = msg => {
   }
 
   if (msg.type === "reset-border-radius") {
-    borderRadiusArray = [0, 2, 4, 8, 16, 24, 32];
+    borderRadiusArray = availableRadii();
     figma.clientStorage.setAsync("storedRadiusValues", []);
 
     figma.ui.postMessage({
@@ -124,10 +125,10 @@ figma.ui.onmessage = msg => {
 
   if (msg.type === "select-multiple-layers") {
     const layerArray = msg.nodeArray;
-    let nodesToBeSelected = [];
+    const nodesToBeSelected = [];
 
     layerArray.forEach(item => {
-      let layer = figma.getNodeById(item);
+      const layer = figma.getNodeById(item);
       // Using selection and viewport requires an array.
       nodesToBeSelected.push(layer);
     });
@@ -140,7 +141,7 @@ figma.ui.onmessage = msg => {
 
   // Serialize nodes to pass back to the UI.
   function serializeNodes(nodes) {
-    let serializedNodes = JSON.stringify(nodes, [
+    const serializedNodes = JSON.stringify(nodes, [
       "name",
       "type",
       "children",
@@ -151,17 +152,17 @@ figma.ui.onmessage = msg => {
   }
 
   function lint(nodes, lockedParentNode?) {
-    let errorArray = [];
-    let childArray = [];
+    const errorArray = [];
+    const childArray = [];
 
     nodes.forEach(node => {
       let isLayerLocked;
 
       // Create a new object.
-      let newObject = {};
+      const newObject: any = {};
 
       // Give it the existing node id.
-      newObject["id"] = node.id;
+      newObject.id = node.id;
 
       // Don't lint locked layers or the children/grandchildren of locked layers.
       if (lockedParentNode === undefined && node.locked === true) {
@@ -175,25 +176,25 @@ figma.ui.onmessage = msg => {
       }
 
       if (isLayerLocked === true) {
-        newObject["errors"] = [];
+        newObject.errors = [];
       } else {
-        newObject["errors"] = determineType(node);
+        newObject.errors = determineType(node);
       }
 
       // Recursively run this function to flatten out children and grandchildren nodes
-      if (node["children"]) {
-        node["children"].forEach(childNode => {
+      if (node.children) {
+        node.children.forEach(childNode => {
           childArray.push(childNode.id);
         });
 
-        newObject["children"] = childArray;
+        newObject.children = childArray;
 
         // If the layer is locked, pass the optional parameter to the recursive Lint
         // function to indicate this layer is locked.
         if (isLayerLocked === true) {
-          errorArray.push(...lint(node["children"], true));
+          errorArray.push(...lint(node.children, true));
         } else {
-          errorArray.push(...lint(node["children"], false));
+          errorArray.push(...lint(node.children, false));
         }
       }
 
@@ -209,10 +210,11 @@ figma.ui.onmessage = msg => {
       figma.notify("Select a frame(s) to get started", { timeout: 2000 });
       return;
     } else {
-      let nodes = figma.currentPage.selection;
+      const nodes = figma.currentPage.selection;
 
       // Maintain the original tree structure so we can enable
       // refreshing the tree and live updating errors.
+      // @ts-ignore
       originalNodeTree = nodes;
 
       // Pass the array back to the UI to be displayed.
@@ -251,7 +253,7 @@ figma.ui.onmessage = msg => {
       case "SLICE":
       case "GROUP": {
         // Groups styles apply to their children so we can skip this node type.
-        let errors = [];
+        const errors = [];
         return errors;
       }
       case "BOOLEAN_OPERATION":
@@ -293,7 +295,7 @@ figma.ui.onmessage = msg => {
   }
 
   function lintComponentRules(node) {
-    let errors = [];
+    const errors = [];
 
     // Example of how we can make a custom rule specifically for components
     // if (node.remote === false) {
@@ -311,7 +313,7 @@ figma.ui.onmessage = msg => {
   }
 
   function lintVariantWrapperRules(node) {
-    let errors = [];
+    const errors = [];
 
     checkFills(node, errors);
 
@@ -319,7 +321,7 @@ figma.ui.onmessage = msg => {
   }
 
   function lintLineRules(node) {
-    let errors = [];
+    const errors = [];
 
     checkStrokes(node, errors);
     checkEffects(node, errors);
@@ -328,7 +330,7 @@ figma.ui.onmessage = msg => {
   }
 
   function lintFrameRules(node) {
-    let errors = [];
+    const errors = [];
 
     checkFills(node, errors);
     checkStrokes(node, errors);
@@ -339,7 +341,7 @@ figma.ui.onmessage = msg => {
   }
 
   function lintTextRules(node) {
-    let errors = [];
+    const errors = [];
 
     checkType(node, errors);
     checkFills(node, errors);
@@ -354,7 +356,7 @@ figma.ui.onmessage = msg => {
   }
 
   function lintRectangleRules(node) {
-    let errors = [];
+    const errors = [];
 
     checkFills(node, errors);
     checkRadius(node, errors, borderRadiusArray);
@@ -365,7 +367,7 @@ figma.ui.onmessage = msg => {
   }
 
   function lintVectorRules(node) {
-    let errors = [];
+    const errors = [];
 
     // This can be enabled by the user in settings.
     if (lintVectors === true) {
@@ -378,7 +380,7 @@ figma.ui.onmessage = msg => {
   }
 
   function lintShapeRules(node) {
-    let errors = [];
+    const errors = [];
 
     checkFills(node, errors);
     checkStrokes(node, errors);

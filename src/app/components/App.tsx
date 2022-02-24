@@ -2,6 +2,8 @@ import * as React from "react";
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 
+import { availableRadii } from "../../plugin/tokenFunctions";
+
 import Navigation from "./Navigation";
 import NodeList from "./NodeList";
 import Preloader from "./Preloader";
@@ -24,13 +26,7 @@ const App = ({}) => {
   const [selectedListItems, setSelectedListItem] = React.useState([]);
   const [activeNodeIds, setActiveNodeIds] = React.useState([]);
   const [borderRadiusValues, setBorderRadiusValues] = useState([
-    0,
-    2,
-    4,
-    8,
-    16,
-    24,
-    32
+    availableRadii()
   ]);
   const [lintVectors, setLintVectors] = useState(false);
   const [initialLoad, setInitialLoad] = React.useState(false);
@@ -99,7 +95,7 @@ const App = ({}) => {
       {
         pluginMessage: {
           type: "update-lint-rules-from-settings",
-          boolean: boolean
+          boolean
         }
       },
       "*"
@@ -118,7 +114,7 @@ const App = ({}) => {
 
   const onRunApp = React.useCallback(() => {
     parent.postMessage(
-      { pluginMessage: { type: "run-app", lintVectors: lintVectors } },
+      { pluginMessage: { type: "run-app", lintVectors } },
       "*"
     );
   }, []);
@@ -176,7 +172,7 @@ const App = ({}) => {
 
       // Plugin code returns this message after finished a loop through the layers.
       if (type === "complete") {
-        let nodeObject = JSON.parse(message);
+        const nodeObject = JSON.parse(message);
 
         setNodeArray(nodeObject);
         updateErrorArray(errors);
@@ -206,7 +202,7 @@ const App = ({}) => {
           setInitialLoad(true);
         }, 1500);
       } else if (type === "fetched storage") {
-        let clientStorage = JSON.parse(storage);
+        const clientStorage = JSON.parse(storage);
 
         setIgnoreErrorArray(ignoredErrorArray => [
           ...ignoredErrorArray,
@@ -214,10 +210,10 @@ const App = ({}) => {
         ]);
       } else if (type === "fetched border radius") {
         // Update border radius values from storage
-        let clientStorage = JSON.parse(storage);
+        const clientStorage = JSON.parse(storage);
         setBorderRadiusValues([...clientStorage]);
       } else if (type === "reset storage") {
-        let clientStorage = JSON.parse(storage);
+        const clientStorage = JSON.parse(storage);
         setIgnoreErrorArray([...clientStorage]);
         parent.postMessage({ pluginMessage: { type: "update-errors" } }, "*");
       } else if (type === "fetched layer") {

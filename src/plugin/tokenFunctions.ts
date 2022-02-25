@@ -14,3 +14,17 @@ export const availableRadii = () => {
     Array.sort(N.Ord)
   );
 };
+
+export const availableBorders = () => {
+  return pipe(
+    tokens,
+    Array.filter(entry => entry.type === "border")
+  );
+};
+
+export const availableTypography = () => {
+  return pipe(
+    tokens,
+    Array.filter(entry => entry.type === "typography")
+  );
+};

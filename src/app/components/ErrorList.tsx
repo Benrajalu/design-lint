@@ -57,9 +57,6 @@ function ErrorList(props) {
         </span>
         <span className="error-description">
           <div className="error-description__message">{error.message}</div>
-          {error.rule && (
-            <div className="error-rule__message">{error.rule}</div>
-          )}
         </span>
         <span className="context-icon">
           {countInstancesOfThisError(error) > 1 ? (
@@ -101,6 +98,12 @@ function ErrorList(props) {
       {error.value ? (
         <div className="current-value">Current value: {error.value}</div>
       ) : null}
+      {error.rule && (
+        <div className="error-rule__message">
+          <img className="rule__arrow" src={require("../assets/caret.svg")} />
+          {error.rule}
+        </div>
+      )}
     </motion.li>
   ));
 

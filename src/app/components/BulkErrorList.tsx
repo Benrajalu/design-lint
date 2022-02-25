@@ -74,7 +74,6 @@ function BulkErrorList(props) {
   };
 
   function handleSelectAll(error) {
-    console.log(error.nodes);
     parent.postMessage(
       {
         pluginMessage: {
@@ -87,7 +86,6 @@ function BulkErrorList(props) {
   }
 
   function handleSelectAllHidden(error) {
-    console.log(error.nodes);
     parent.postMessage(
       {
         pluginMessage: {
@@ -153,9 +151,6 @@ function BulkErrorList(props) {
           ) : (
             <div className="error-description__message">{error.message}</div>
           )}
-          {error.rule && (
-            <div className="error-rule__message">{error.rule}</div>
-          )}
         </span>
         <span className="context-icon">
           {error.nodes.length > 1 ? (
@@ -201,6 +196,12 @@ function BulkErrorList(props) {
       {error.value ? (
         <div className="current-value">Current value: {error.value}</div>
       ) : null}
+      {error.rule && (
+        <div className="error-rule__message">
+          <img className="rule__arrow" src={require("../assets/caret.svg")} />
+          {error.rule}
+        </div>
+      )}
     </motion.li>
   ));
 

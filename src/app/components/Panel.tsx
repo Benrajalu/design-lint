@@ -101,7 +101,6 @@ function Panel(props) {
 
   function handleSelectAll(error) {
     const nodesToBeSelected = [];
-    console.log("pouet");
 
     filteredErrorArray.forEach(node => {
       node.errors.forEach(item => {

@@ -133,6 +133,10 @@
   font-weight: 400;
 }
 
+.current-value + .error-rule__message {
+  margin-top: 4px;
+}
+
 .error-type {
   margin-right: 12px;
   align-self: center;
@@ -144,6 +148,18 @@
 
 .error-rule__message {
   font-size: 0.8em;
+  display: flex;
+  flex-flow: row nowrap;
+  width: 100%;
+  justify-content: stretch;
+  align-items: flex-start;
+}
+
+.rule__arrow {
+  transform: rotate(-90deg) translateX(-3px);
+  margin-right: 4px;
+  flex-shrink: 0;
+  flex-grow: 0;
 }
 
 .error-type img {

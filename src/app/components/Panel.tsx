@@ -174,6 +174,7 @@ function Panel(props) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 1, y: -10, scale: 0 }}
                   className="success-message"
+                  key="success-message"
                 >
                   <div className="success-shape">
                     <img

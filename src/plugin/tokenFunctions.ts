@@ -28,3 +28,35 @@ export const availableTypography = () => {
     Array.filter(entry => entry.type === "typography")
   );
 };
+
+export const FigmaFriendlyTypography = () => {
+  const typeTokens = availableTypography();
+  const fontWeights = {
+    200: "Light",
+    400: "Regular",
+    500: "Medium",
+    600: "SemiBold",
+    800: "Bold"
+  };
+  return pipe(
+    typeTokens,
+    Array.reduce({}, (acc, current) => {
+      // tslint:disable-next-line:max-line-length
+      const cleanFigmaValue = `${current.fontFamily} ${
+        fontWeights[current.fontWeight]
+      } / ${parseFloat(current.fontSize.replace("rem", "")) *
+        10} (${current.lineHeight.replace("%", "")} line-height)`;
+      const cleanName = current.name
+        .replace("coral", "")
+        .split(/(?=[A-Z])/)
+        .join(" / ");
+      return {
+        ...acc,
+        [cleanName]: {
+          figmaValue: cleanFigmaValue,
+          name: cleanName
+        }
+      };
+    })
+  );
+};

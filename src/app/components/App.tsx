@@ -236,9 +236,10 @@ const App = ({}) => {
         <Navigation
           onPageSelection={updateNavigation}
           activePage={activePage}
+          key="navigation"
         />
         {activeNodeIds.length !== 0 ? (
-          <div>
+          <div key="nodes">
             {activePage === "layers" ? (
               <NodeList
                 onErrorUpdate={updateActiveError}

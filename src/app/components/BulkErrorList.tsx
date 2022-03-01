@@ -219,7 +219,7 @@ function BulkErrorList(props) {
       }}
     >
       <AnimatePresence>
-        <div className="panel-body panel-body-errors">
+        <div className="panel-body panel-body-errors" key="bulk-errors">
           {bulkErrorList.length ? (
             <ul className="errors-list">{errorListItems}</ul>
           ) : (
@@ -229,6 +229,7 @@ function BulkErrorList(props) {
               animate="enter"
               exit="exit"
               className="success-message"
+              key="single-error"
             >
               <div className="success-shape">
                 <img

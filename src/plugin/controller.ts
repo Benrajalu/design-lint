@@ -2,10 +2,10 @@ import {
   checkRadius,
   checkEffects,
   checkFills,
-  checkType,
   customCheckTextFills,
   customCheckBackgroundFills,
-  customCheckStrokes
+  customCheckStrokes,
+  customCheckTextStyles
 } from "./lintingFunctions";
 import { availableRadii } from "./tokenFunctions";
 
@@ -364,7 +364,7 @@ figma.ui.onmessage = msg => {
   function lintTextRules(node) {
     const errors = [];
 
-    checkType(node, errors);
+    customCheckTextStyles(node, errors);
     customCheckTextFills(node, errors);
     checkEffects(node, errors);
     customCheckStrokes(node, errors);

@@ -1,31 +1,84 @@
 import { pipe } from "fp-ts/function";
-import * as Array from "fp-ts/Array";
+import * as ArrayFP from "fp-ts/Array";
 import * as N from "fp-ts/number";
 import tokens from "@talend/design-tokens/lib/light/dictionary";
+
+export function getAllLegalPaintStyles() {
+  return pipe(
+    tokens,
+    ArrayFP.filter(token => token.type === "color")
+  );
+}
+
+export function getLegalTextPaintStyles() {
+  return pipe(
+    tokens,
+    ArrayFP.filter(
+      token =>
+        token.type === "color" && token.name.toLowerCase().includes("text")
+    )
+  );
+}
+
+export function getLegalBackgroundPaintStyles() {
+  return pipe(
+    tokens,
+    ArrayFP.filter(
+      token =>
+        token.type === "color" &&
+        (token.name.toLowerCase().includes("background") ||
+          token.name.toLowerCase().includes("chart"))
+    )
+  );
+}
+
+export function getLegalBorderPaintStyles() {
+  return pipe(
+    tokens,
+    ArrayFP.filter(
+      token =>
+        token.type === "color" && token.name.toLowerCase().includes("border")
+    )
+  );
+}
+
+export function getLegalTextStyles() {
+  return pipe(
+    tokens,
+    ArrayFP.filter(token => token.type === "typography")
+  );
+}
+
+export function getLegalEffectStyles() {
+  return pipe(
+    tokens,
+    ArrayFP.filter(token => token.type === "shadow")
+  );
+}
 
 export const availableRadii = () => {
   return pipe(
     tokens,
-    Array.filter(entry => entry.type === "radius"),
-    Array.map(radius => {
+    ArrayFP.filter(entry => entry.type === "radius"),
+    ArrayFP.map(radius => {
       const cleanRadius = radius.value.replace("rem", "");
       return Number(cleanRadius) * 10;
     }),
-    Array.sort(N.Ord)
+    ArrayFP.sort(N.Ord)
   );
 };
 
 export const availableBorders = () => {
   return pipe(
     tokens,
-    Array.filter(entry => entry.type === "border")
+    ArrayFP.filter(entry => entry.type === "border")
   );
 };
 
 export const availableTypography = () => {
   return pipe(
     tokens,
-    Array.filter(entry => entry.type === "typography")
+    ArrayFP.filter(entry => entry.type === "typography")
   );
 };
 
@@ -40,7 +93,7 @@ export const FigmaFriendlyTypography = () => {
   };
   return pipe(
     typeTokens,
-    Array.reduce({}, (acc, current) => {
+    ArrayFP.reduce({}, (acc, current) => {
       // tslint:disable-next-line:max-line-length
       const cleanFigmaValue = `${current.fontFamily} ${
         fontWeights[current.fontWeight]
@@ -59,4 +112,27 @@ export const FigmaFriendlyTypography = () => {
       };
     })
   );
+};
+
+export const getTheme = async () => {
+  const request = new XMLHttpRequest();
+  request.open(
+    "GET",
+    "https://api.figma.com/v1/files/G5iL99Z4KEZVozB8BeVXxL/styles"
+  );
+  request.setRequestHeader("X-FIGMA-TOKEN", "SECRET");
+  request.responseType = "json";
+  request.onload = () => {
+    const response = request.response;
+    window.parent.postMessage(
+      {
+        pluginMessage: {
+          type: "setTheme",
+          value: response.meta.styles
+        }
+      },
+      "*"
+    );
+  };
+  request.send();
 };

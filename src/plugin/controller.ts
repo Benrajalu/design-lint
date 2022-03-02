@@ -1,10 +1,10 @@
 import {
-  checkRadius,
-  checkEffects,
+  customCheckEffects,
   checkFills,
-  customCheckTextFills,
+  checkRadius,
   customCheckBackgroundFills,
   customCheckStrokes,
+  customCheckTextFills,
   customCheckTextStyles
 } from "./lintingFunctions";
 import { availableRadii } from "./tokenFunctions";
@@ -14,8 +14,9 @@ figma.showUI(__html__, { width: 360, height: 580 });
 let borderRadiusArray = [0, ...availableRadii()];
 let originalNodeTree = [];
 let lintVectors = false;
+// let defaultTheme = [];
 
-figma.ui.onmessage = msg => {
+figma.ui.onmessage = async msg => {
   // Fetch a specific node by ID.
   if (msg.type === "fetch-layer-data") {
     const layer = figma.getNodeById(msg.id);
@@ -160,6 +161,14 @@ figma.ui.onmessage = msg => {
     figma.notify("Multiple layers selected", { timeout: 1000 });
   }
 
+  /*if (msg.type === "setTheme") {
+    console.log({msg});
+    defaultTheme = msg.value;
+    figma.ui.postMessage({
+      type: "readyToLaunch",
+    });
+  }*/
+
   // Serialize nodes to pass back to the UI.
   function serializeNodes(nodes) {
     const serializedNodes = JSON.stringify(nodes, [
@@ -226,6 +235,11 @@ figma.ui.onmessage = msg => {
   }
 
   // Initialize the app
+  if (msg.type === "init-app") {
+    figma.ui.postMessage({
+      type: "fetchTheme"
+    });
+  }
   if (msg.type === "run-app") {
     if (figma.currentPage.selection.length === 0) {
       figma.notify("Select a frame(s) to get started", { timeout: 2000 });
@@ -318,16 +332,9 @@ figma.ui.onmessage = msg => {
   function lintComponentRules(node) {
     const errors = [];
 
-    // Example of how we can make a custom rule specifically for components
-    // if (node.remote === false) {
-    //   errors.push(
-    //     createErrorObject(node, "component", "Component isn't from library")
-    //   );
-    // }
-
     customCheckBackgroundFills(node, errors);
     checkRadius(node, errors, borderRadiusArray);
-    checkEffects(node, errors);
+    customCheckEffects(node, errors);
     customCheckStrokes(node, errors);
 
     return errors;
@@ -345,7 +352,7 @@ figma.ui.onmessage = msg => {
     const errors = [];
 
     customCheckStrokes(node, errors);
-    checkEffects(node, errors);
+    customCheckEffects(node, errors);
 
     return errors;
   }
@@ -356,7 +363,7 @@ figma.ui.onmessage = msg => {
     customCheckBackgroundFills(node, errors);
     customCheckStrokes(node, errors);
     checkRadius(node, errors, borderRadiusArray);
-    checkEffects(node, errors);
+    customCheckEffects(node, errors);
 
     return errors;
   }
@@ -366,7 +373,7 @@ figma.ui.onmessage = msg => {
 
     customCheckTextStyles(node, errors);
     customCheckTextFills(node, errors);
-    checkEffects(node, errors);
+    customCheckEffects(node, errors);
     customCheckStrokes(node, errors);
 
     return errors;
@@ -378,7 +385,7 @@ figma.ui.onmessage = msg => {
     customCheckBackgroundFills(node, errors);
     checkRadius(node, errors, borderRadiusArray);
     customCheckStrokes(node, errors);
-    checkEffects(node, errors);
+    customCheckEffects(node, errors);
 
     return errors;
   }
@@ -390,7 +397,7 @@ figma.ui.onmessage = msg => {
     if (lintVectors === true) {
       checkFills(node, errors);
       customCheckStrokes(node, errors);
-      checkEffects(node, errors);
+      customCheckEffects(node, errors);
     }
 
     return errors;
@@ -401,7 +408,7 @@ figma.ui.onmessage = msg => {
 
     checkFills(node, errors);
     customCheckStrokes(node, errors);
-    checkEffects(node, errors);
+    customCheckEffects(node, errors);
 
     return errors;
   }

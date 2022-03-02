@@ -113,7 +113,14 @@ const App = ({}) => {
     pollForChanges();
   };
 
-  const onRunApp = React.useCallback(() => {
+  /*  const initApp = React.useCallback(() => {
+    parent.postMessage(
+      { pluginMessage: { type: "init-app" } },
+      "*"
+    );
+  }, []);*/
+
+  const runApp = React.useCallback(() => {
     parent.postMessage(
       { pluginMessage: { type: "run-app", lintVectors } },
       "*"
@@ -163,13 +170,21 @@ const App = ({}) => {
   }, [ignoredErrorArray]);
 
   React.useEffect(() => {
-    onRunApp();
+    runApp();
 
     window.addEventListener("focus", onFocus);
     window.addEventListener("blur", onBlur);
 
     window.onmessage = event => {
       const { type, message, errors, storage } = event.data.pluginMessage;
+
+      /*if (type === "fetchTheme") {
+        getTheme().catch(error => console.error(error));
+      }
+
+      if (type === "readyToLaunch") {
+        runApp();
+      }*/
 
       // Plugin code returns this message after finished a loop through the layers.
       if (type === "complete") {
@@ -245,7 +260,7 @@ const App = ({}) => {
                 onErrorUpdate={updateActiveError}
                 onVisibleUpdate={updateVisible}
                 onSelectedListUpdate={updateSelectedList}
-                onRefreshSelection={onRunApp}
+                onRefreshSelection={runApp}
                 visibility={isVisible}
                 nodeArray={nodeArray}
                 errorArray={errorArray}
@@ -271,7 +286,7 @@ const App = ({}) => {
         ) : timedLoad === false ? (
           <Preloader />
         ) : (
-          <EmptyState onHandleRunApp={onRunApp} />
+          <EmptyState onHandleRunApp={runApp} />
         )}
       </AnimatePresence>
 

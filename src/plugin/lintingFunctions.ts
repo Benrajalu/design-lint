@@ -2,11 +2,21 @@ import { pipe } from "fp-ts/function";
 import * as ArrayFP from "fp-ts/Array";
 // Linting functions
 
+import {
+  libToFigmaColorTokenName,
+  sanitizeFigmaKey
+} from "./figmaStringFormats";
 // Generic function for creating an error object to pass to the app.
 import {
   availableBorders,
   availableRadii,
-  FigmaFriendlyTypography
+  FigmaFriendlyTypography,
+  getAllLegalPaintStyles,
+  getLegalBackgroundPaintStyles,
+  getLegalBorderPaintStyles,
+  getLegalEffectStyles,
+  getLegalTextPaintStyles,
+  getLegalTextStyles
 } from "./tokenFunctions";
 
 export function createErrorObject(node, type, message, value?, rule?) {
@@ -61,6 +71,266 @@ export function determineFill(fills) {
   });
 
   return fillValues[0];
+}
+
+// Lint text for ../text tokens
+export function customCheckTextFills(node, errors) {
+  const allTextPaintStyles = getLegalTextPaintStyles();
+  const allPaintStyles = getAllLegalPaintStyles();
+  // Here we create an array of style keys (https://www.figma.com/plugin-docs/api/PaintStyle/#key)
+  // that we want to make sure our text layers are using.
+  const fillsToCheck = pipe(
+    allTextPaintStyles,
+    ArrayFP.map(entry => sanitizeFigmaKey(entry.id))
+  );
+
+  const nodeFillStyle = sanitizeFigmaKey(node.fillStyleId);
+
+  // If there are multiple text styles on a single text layer, we can't lint it
+  // we can return an error instead.
+  if (typeof nodeFillStyle === "symbol") {
+    return errors.push(
+      createErrorObject(
+        node, // Node object we use to reference the error (id, layer name, etc)
+        "fill", // Type of error (fill, text, effect, etc)
+        "Mixing two styles together", // Message we show to the user
+        "Multiple Styles", // Normally we return a hex value here
+        "We cannot lint here. Ensure all the styles used are tokens"
+      )
+    );
+  }
+
+  const currentStyle = pipe(
+    allPaintStyles,
+    ArrayFP.filter(style => sanitizeFigmaKey(style.id) === nodeFillStyle),
+    ArrayFP.map(current => libToFigmaColorTokenName(current.name))
+  );
+
+  // If the node (layer) has a fill style, then check to see if there's an error.
+  if (nodeFillStyle !== "") {
+    // If we find the layer has a fillStyle that doesn't match in the array create an error.
+    if (!fillsToCheck.includes(nodeFillStyle)) {
+      return errors.push(
+        createErrorObject(
+          node, // Node object we use to reference the error (id, layer name, etc)
+          "fill", // Type of error (fill, text, effect, etc)
+          "Incorrect text color", // Message we show to the user
+          currentStyle[0] ? currentStyle[0] : "Not a text token!",
+          'Use semantic ".../text" tokens'
+        )
+      );
+    }
+    // If there is no fillStyle on this layer,
+    // check to see why with our default linting function for fills.
+  } else {
+    checkFills(node, errors);
+  }
+}
+
+// Lint backgrounds for ../background tokens
+export function customCheckBackgroundFills(node, errors) {
+  const allStyles = getAllLegalPaintStyles();
+  const allowedStyles = getLegalBackgroundPaintStyles();
+  // Here we create an array of style keys (https://www.figma.com/plugin-docs/api/PaintStyle/#key)
+  // that we want to make sure our text layers are using.
+  const fillsToCheck = pipe(
+    allowedStyles,
+    ArrayFP.map(entry => sanitizeFigmaKey(entry.id))
+  );
+
+  const nodeFillStyle = sanitizeFigmaKey(node.fillStyleId);
+
+  // If there are multiple text styles on a single text layer, we can't lint it
+  // we can return an error instead.
+  if (typeof nodeFillStyle === "symbol") {
+    return errors.push(
+      createErrorObject(
+        node, // Node object we use to reference the error (id, layer name, etc)
+        "fill", // Type of error (fill, text, effect, etc)
+        "Mixing two styles together", // Message we show to the user
+        "Multiple Styles", // Normally we return a hex value here
+        "We can lint here. Ensure all the styles used are tokens"
+      )
+    );
+  }
+
+  const currentStyle = pipe(
+    allStyles,
+    ArrayFP.filter(style => sanitizeFigmaKey(style.id) === nodeFillStyle),
+    ArrayFP.map(current => libToFigmaColorTokenName(current.name))
+  );
+
+  // If the node (layer) has a fill style, then check to see if there's an error.
+  if (nodeFillStyle !== "") {
+    // If we find the layer has a fillStyle that doesn't match in the array create an error.
+    if (!fillsToCheck.includes(nodeFillStyle)) {
+      return errors.push(
+        createErrorObject(
+          node, // Node object we use to reference the error (id, layer name, etc)
+          "fill", // Type of error (fill, text, effect, etc)
+          "Incorrect fill color", // Message we show to the user
+          currentStyle[0]
+            ? `${currentStyle[0]} as a fill`
+            : "Not a background token!",
+          'Use semantic ".../background" tokens'
+        )
+      );
+    }
+    // If there is no fillStyle on this layer,
+    // check to see why with our default linting function for fills.
+  } else {
+    checkFills(node, errors);
+  }
+}
+
+// Lint strokes for ../border tokens and valid weight and styles
+export function customCheckStrokes(node, errors) {
+  if (
+    node.strokes.length &&
+    node.strokeStyleId !== "" &&
+    node.visible === true
+  ) {
+    const allStyles = getAllLegalPaintStyles();
+    const borderStyles = getLegalBorderPaintStyles();
+    const possibleErrors = [];
+
+    const strokesFillsToCheck = pipe(
+      borderStyles,
+      ArrayFP.map(paintStyle => sanitizeFigmaKey(paintStyle.id))
+    );
+
+    const strokesTypesToCheck = pipe(
+      availableBorders(),
+      ArrayFP.map(borders => borders.value)
+    );
+
+    const currentStrokeStyleID = sanitizeFigmaKey(node.strokeStyleId);
+
+    const currentStrokeWeightAndType = `${
+      node.strokeWeight
+    }px ${node.strokes[0].type.toLowerCase()}`;
+
+    if (!strokesTypesToCheck.includes(currentStrokeWeightAndType)) {
+      const strokeTypeError = createErrorObject(
+        node, // Node object we use to reference the error (id, layer name, etc)
+        "stroke", // Type of error (fill, text, effect, etc)
+        "Incorrect border style", // Message we show to the user
+        currentStrokeWeightAndType,
+        `Pick from ${strokesTypesToCheck.join(", ")}.`
+      );
+      possibleErrors.push(strokeTypeError);
+    }
+
+    if (!strokesFillsToCheck.includes(currentStrokeStyleID)) {
+      const currentStyle = pipe(
+        allStyles,
+        ArrayFP.filter(
+          style => sanitizeFigmaKey(style.id) === currentStrokeStyleID
+        ),
+        ArrayFP.map(current => libToFigmaColorTokenName(current.name))
+      );
+
+      const fillError = createErrorObject(
+        node, // Node object we use to reference the error (id, layer name, etc)
+        "stroke", // Type of error (fill, text, effect, etc)
+        "Incorrect border color", // Message we show to the user
+        currentStyle[0]
+          ? `${currentStyle[0]} as a border`
+          : "Not a border token!",
+        'Use semantic ".../border" tokens'
+      );
+      possibleErrors.push(fillError);
+    }
+
+    return errors.push(...possibleErrors);
+  } else {
+    checkStrokes(node, errors);
+  }
+}
+
+// Lint effects for tokens (shadows)
+export function customCheckEffects(node, errors) {
+  if (
+    node.effects.length &&
+    node.effectStyleId !== "" &&
+    node.visible === true
+  ) {
+    const effectStyles = getLegalEffectStyles();
+    const possibleErrors = [];
+
+    const effectStylesToCheck = pipe(
+      effectStyles,
+      ArrayFP.map(effectStyle => sanitizeFigmaKey(effectStyle.id))
+    );
+
+    const currentEffectId = sanitizeFigmaKey(node.effectStyleId);
+
+    if (!effectStylesToCheck.includes(currentEffectId)) {
+      const fillError = createErrorObject(
+        node, // Node object we use to reference the error (id, layer name, etc)
+        "effects", // Type of error (fill, text, effect, etc)
+        "Effect style is not a token", // Message we show to the user
+        "Not an effect token!",
+        'Use semantic "shadow/..." tokens'
+      );
+      possibleErrors.push(fillError);
+    }
+
+    return errors.push(...possibleErrors);
+  } else {
+    checkEffects(node, errors);
+  }
+}
+
+// Lint text for text tokens
+export function customCheckTextStyles(node, errors) {
+  const textStyles = getLegalTextStyles();
+  const typeTokens = FigmaFriendlyTypography();
+  // Here we create an array of style keys (https://www.figma.com/plugin-docs/api/PaintStyle/#key)
+  // that we want to make sure our text layers are using.
+  const stylesToCheck = pipe(
+    textStyles,
+    ArrayFP.map(entry => sanitizeFigmaKey(entry.id))
+  );
+
+  const nodeFillStyle = sanitizeFigmaKey(node.textStyleId);
+
+  // If there are multiple text styles on a single text layer, we can't lint it
+  // we can return an error instead.
+  if (typeof nodeFillStyle === "symbol") {
+    return errors.push(
+      createErrorObject(
+        node, // Node object we use to reference the error (id, layer name, etc)
+        "text", // Type of error (fill, text, effect, etc)
+        "Mixing two styles together", // Message we show to the user
+        "Multiple Styles", // Normally we return a hex value here
+        "We cannot lint here. Ensure all the styles used are tokens"
+      )
+    );
+  }
+
+  // If the node (layer) has a fill style, then check to see if there's an error.
+  if (nodeFillStyle !== "") {
+    // If we find the layer has a fillStyle that doesn't match in the array create an error.
+    if (!stylesToCheck.includes(nodeFillStyle)) {
+      const possibleStyles = Object.keys(typeTokens);
+      return errors.push(
+        createErrorObject(
+          node, // Node object we use to reference the error (id, layer name, etc)
+          "text", // Type of error (fill, text, effect, etc)
+          "Incorrect text style", // Message we show to the user
+          "Not a valid token!",
+          `Use one of the following tokens instead: ${possibleStyles.join(
+            ", "
+          )}`
+        )
+      );
+    }
+    // If there is no fillStyle on this layer,
+    // check to see why with our default linting function for fills.
+  } else {
+    checkType(node, errors);
+  }
 }
 
 // Lint border radius
@@ -132,205 +402,6 @@ export function checkRadius(node, errors, radiusValues) {
     } else {
       return;
     }
-  }
-}
-
-// Lint text for ../text tokens
-export function customCheckTextFills(node, errors) {
-  const allStyles = figma.getLocalPaintStyles();
-  // Here we create an array of style keys (https://www.figma.com/plugin-docs/api/PaintStyle/#key)
-  // that we want to make sure our text layers are using.
-  const fillsToCheck = pipe(
-    allStyles,
-    ArrayFP.filter(paintStyle => paintStyle.name.includes("text")),
-    ArrayFP.map(
-      textPaintStyle => textPaintStyle.id.replace("S:", "").split(",")[0]
-    )
-  );
-
-  let nodeFillStyle = node.fillStyleId;
-
-  // If there are multiple text styles on a single text layer, we can't lint it
-  // we can return an error instead.
-  if (typeof nodeFillStyle === "symbol") {
-    return errors.push(
-      createErrorObject(
-        node, // Node object we use to reference the error (id, layer name, etc)
-        "fill", // Type of error (fill, text, effect, etc)
-        "Mixing two styles together", // Message we show to the user
-        "Multiple Styles", // Normally we return a hex value here
-        "We cannot lint here. Ensure all the styles used are tokens"
-      )
-    );
-  }
-
-  const currentStyle = pipe(
-    allStyles,
-    ArrayFP.filter(style => style.id === nodeFillStyle),
-    ArrayFP.map(current => current.name)
-  );
-
-  // We strip the additional style key characters so we can check
-  // to see if the fill is being used incorrectly.
-  nodeFillStyle = nodeFillStyle.replace("S:", "");
-  nodeFillStyle = nodeFillStyle.split(",")[0];
-
-  // If the node (layer) has a fill style, then check to see if there's an error.
-  if (nodeFillStyle !== "") {
-    // If we find the layer has a fillStyle that doesn't match in the array create an error.
-    if (!fillsToCheck.includes(nodeFillStyle)) {
-      return errors.push(
-        createErrorObject(
-          node, // Node object we use to reference the error (id, layer name, etc)
-          "fill", // Type of error (fill, text, effect, etc)
-          "Incorrect text color", // Message we show to the user
-          currentStyle[0] ? currentStyle[0] : "Not a text token!",
-          'Use semantic ".../text" tokens'
-        )
-      );
-    }
-    // If there is no fillStyle on this layer,
-    // check to see why with our default linting function for fills.
-  } else {
-    checkFills(node, errors);
-  }
-}
-
-// Lint backgrounds for ../background tokens
-export function customCheckBackgroundFills(node, errors) {
-  const allStyles = figma.getLocalPaintStyles();
-  // Here we create an array of style keys (https://www.figma.com/plugin-docs/api/PaintStyle/#key)
-  // that we want to make sure our text layers are using.
-  const fillsToCheck = pipe(
-    allStyles,
-    ArrayFP.filter(
-      paintStyle =>
-        paintStyle.name.includes("background") ||
-        paintStyle.name.includes("chart")
-    ),
-    ArrayFP.map(
-      backgroundPaintStyle =>
-        backgroundPaintStyle.id.replace("S:", "").split(",")[0]
-    )
-  );
-
-  let nodeFillStyle = node.fillStyleId;
-
-  // If there are multiple text styles on a single text layer, we can't lint it
-  // we can return an error instead.
-  if (typeof nodeFillStyle === "symbol") {
-    return errors.push(
-      createErrorObject(
-        node, // Node object we use to reference the error (id, layer name, etc)
-        "fill", // Type of error (fill, text, effect, etc)
-        "Mixing two styles together", // Message we show to the user
-        "Multiple Styles", // Normally we return a hex value here
-        "We can lint here. Ensure all the styles used are tokens"
-      )
-    );
-  }
-
-  const currentStyle = pipe(
-    allStyles,
-    ArrayFP.filter(style => style.id === nodeFillStyle),
-    ArrayFP.map(current => current.name)
-  );
-
-  // We strip the additional style key characters so we can check
-  // to see if the fill is being used incorrectly.
-  nodeFillStyle = nodeFillStyle.replace("S:", "");
-  nodeFillStyle = nodeFillStyle.split(",")[0];
-
-  // If the node (layer) has a fill style, then check to see if there's an error.
-  if (nodeFillStyle !== "") {
-    // If we find the layer has a fillStyle that doesn't match in the array create an error.
-    if (!fillsToCheck.includes(nodeFillStyle)) {
-      return errors.push(
-        createErrorObject(
-          node, // Node object we use to reference the error (id, layer name, etc)
-          "fill", // Type of error (fill, text, effect, etc)
-          "Incorrect fill color", // Message we show to the user
-          currentStyle[0]
-            ? `${currentStyle[0]} as a fill`
-            : "Not a background token!",
-          'Use semantic ".../background" tokens'
-        )
-      );
-    }
-    // If there is no fillStyle on this layer,
-    // check to see why with our default linting function for fills.
-  } else {
-    checkFills(node, errors);
-  }
-}
-
-// Lint strokes for ../border tokens and valid weight and styles
-export function customCheckStrokes(node, errors) {
-  if (
-    node.strokes.length &&
-    node.strokeStyleId !== "" &&
-    node.visible === true
-  ) {
-    const allStyles = figma.getLocalPaintStyles();
-    const possibleErrors = [];
-
-    const strokesFillsToCheck = pipe(
-      allStyles,
-      ArrayFP.filter(paintStyle => paintStyle.name.includes("border")),
-      ArrayFP.map(
-        backgroundPaintStyle =>
-          backgroundPaintStyle.id.replace("S:", "").split(",")[0]
-      )
-    );
-
-    const strokesTypesToCheck = pipe(
-      availableBorders(),
-      ArrayFP.map(borders => borders.value)
-    );
-
-    const currentStrokeStyleID = node.strokeStyleId
-      .replace("S:", "")
-      .split(",")[0];
-    const currentStrokeWeightAndType = `${
-      node.strokeWeight
-    }px ${node.strokes[0].type.toLowerCase()}`;
-
-    if (!strokesTypesToCheck.includes(currentStrokeWeightAndType)) {
-      const strokeTypeError = createErrorObject(
-        node, // Node object we use to reference the error (id, layer name, etc)
-        "stroke", // Type of error (fill, text, effect, etc)
-        "Incorrect border style", // Message we show to the user
-        currentStrokeWeightAndType,
-        `Pick from ${strokesTypesToCheck.join(", ")}.`
-      );
-      possibleErrors.push(strokeTypeError);
-    }
-
-    if (!strokesFillsToCheck.includes(currentStrokeStyleID)) {
-      const currentStyle = pipe(
-        allStyles,
-        ArrayFP.filter(style => {
-          const sanitizedID = style.id.replace("S:", "").replace(",", "");
-          return sanitizedID === currentStrokeStyleID;
-        }),
-        ArrayFP.map(current => current.name)
-      );
-
-      const fillError = createErrorObject(
-        node, // Node object we use to reference the error (id, layer name, etc)
-        "stroke", // Type of error (fill, text, effect, etc)
-        "Incorrect border color", // Message we show to the user
-        currentStyle[0]
-          ? `${currentStyle[0]} as a border`
-          : "Not a border token!",
-        'Use semantic ".../border" tokens'
-      );
-      possibleErrors.push(fillError);
-    }
-
-    return errors.push(...possibleErrors);
-  } else {
-    checkStrokes(node, errors);
   }
 }
 
@@ -494,78 +565,6 @@ export function checkType(node, errors) {
     );
   } else {
     return;
-  }
-}
-
-// Lint text for text tokens
-export function customCheckTextStyles(node, errors) {
-  const allStyles = figma.getLocalTextStyles();
-  const typeTokens = FigmaFriendlyTypography();
-  // Here we create an array of style keys (https://www.figma.com/plugin-docs/api/PaintStyle/#key)
-  // that we want to make sure our text layers are using.
-  const stylesToCheck: string[] = pipe(
-    allStyles,
-    ArrayFP.filter(textStyle => {
-      const styleName = textStyle.name.toLowerCase();
-      const enabledStylesNames: string[] = pipe(
-        Object.keys(typeTokens),
-        ArrayFP.map((style: string) => style.toLowerCase().replace(/\s/g, ""))
-      );
-      return enabledStylesNames.includes(styleName);
-    }),
-    ArrayFP.map(allowedTextStyle => {
-      return allowedTextStyle.id.replace("S:", "").split(",")[0];
-    })
-  );
-
-  let nodeFillStyle = node.textStyleId;
-
-  // If there are multiple text styles on a single text layer, we can't lint it
-  // we can return an error instead.
-  if (typeof nodeFillStyle === "symbol") {
-    return errors.push(
-      createErrorObject(
-        node, // Node object we use to reference the error (id, layer name, etc)
-        "text", // Type of error (fill, text, effect, etc)
-        "Mixing two styles together", // Message we show to the user
-        "Multiple Styles", // Normally we return a hex value here
-        "We cannot lint here. Ensure all the styles used are tokens"
-      )
-    );
-  }
-
-  const currentStyle = pipe(
-    allStyles,
-    ArrayFP.filter(style => style.id === nodeFillStyle),
-    ArrayFP.map(current => current.name)
-  );
-
-  // We strip the additional style key characters so we can check
-  // to see if the fill is being used incorrectly.
-  nodeFillStyle = nodeFillStyle.replace("S:", "");
-  nodeFillStyle = nodeFillStyle.split(",")[0];
-
-  // If the node (layer) has a fill style, then check to see if there's an error.
-  if (nodeFillStyle !== "") {
-    // If we find the layer has a fillStyle that doesn't match in the array create an error.
-    if (!stylesToCheck.includes(nodeFillStyle)) {
-      const possibleStyles = Object.keys(typeTokens);
-      return errors.push(
-        createErrorObject(
-          node, // Node object we use to reference the error (id, layer name, etc)
-          "text", // Type of error (fill, text, effect, etc)
-          "Incorrect text style", // Message we show to the user
-          currentStyle[0] ? `${currentStyle[0]}` : "Not a valid token!",
-          `Use one of the following tokens instead: ${possibleStyles.join(
-            ", "
-          )}`
-        )
-      );
-    }
-    // If there is no fillStyle on this layer,
-    // check to see why with our default linting function for fills.
-  } else {
-    checkType(node, errors);
   }
 }
 

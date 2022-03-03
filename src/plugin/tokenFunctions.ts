@@ -32,6 +32,31 @@ export function getLegalBackgroundPaintStyles() {
   );
 }
 
+export function getLegalShapePaintStyles() {
+  return pipe(
+    tokens,
+    ArrayFP.filter(
+      token =>
+        token.type === "color" &&
+        (token.name.toLowerCase().includes("background") ||
+          token.name.toLowerCase().includes("chart") ||
+          token.name.toLowerCase().includes("icon"))
+    )
+  );
+}
+
+export function getLegalVectorPaintStyles() {
+  return pipe(
+    tokens,
+    ArrayFP.filter(
+      token =>
+        token.type === "color" &&
+        (token.name.toLowerCase().includes("text") ||
+          token.name.toLowerCase().includes("icon"))
+    )
+  );
+}
+
 export function getLegalBorderPaintStyles() {
   return pipe(
     tokens,

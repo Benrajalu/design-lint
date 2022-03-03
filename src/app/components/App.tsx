@@ -96,7 +96,7 @@ const App = ({}) => {
       {
         pluginMessage: {
           type: "update-lint-rules-from-settings",
-          bool
+          boolean: bool
         }
       },
       "*"

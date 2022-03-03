@@ -60,6 +60,7 @@ function SettingsPanel(props) {
                   name="vectorsCheckbox"
                   type="checkbox"
                   checked={props.lintVectors}
+                  readOnly={true}
                 />
                 <label>Lint Vectors and Boolean Shapes</label>
               </div>

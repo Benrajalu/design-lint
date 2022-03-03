@@ -5,7 +5,9 @@ import {
   customCheckBackgroundFills,
   customCheckStrokes,
   customCheckTextFills,
-  customCheckTextStyles
+  customCheckTextStyles,
+  customCheckVectorFills,
+  customCheckShapeFills
 } from "./lintingFunctions";
 import { availableRadii } from "./tokenFunctions";
 
@@ -205,14 +207,14 @@ figma.ui.onmessage = async msg => {
         isLayerLocked = lockedParentNode;
       }
 
-      if (isLayerLocked === true) {
+      if (isLayerLocked === true || !node.visible) {
         newObject.errors = [];
       } else {
         newObject.errors = determineType(node);
       }
 
       // Recursively run this function to flatten out children and grandchildren nodes
-      if (node.children) {
+      if (node.children && node.visible) {
         node.children.forEach(childNode => {
           childArray.push(childNode.id);
         });
@@ -395,7 +397,7 @@ figma.ui.onmessage = async msg => {
 
     // This can be enabled by the user in settings.
     if (lintVectors === true) {
-      checkFills(node, errors);
+      customCheckVectorFills(node, errors);
       customCheckStrokes(node, errors);
       customCheckEffects(node, errors);
     }
@@ -406,7 +408,7 @@ figma.ui.onmessage = async msg => {
   function lintShapeRules(node) {
     const errors = [];
 
-    checkFills(node, errors);
+    customCheckShapeFills(node, errors);
     customCheckStrokes(node, errors);
     customCheckEffects(node, errors);
 

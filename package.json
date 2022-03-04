@@ -1,6 +1,6 @@
 {
-	"name": "figma-plugin-react-template",
-	"version": "1.0.0",
+	"name": "Design-Lint-for-Coral",
+	"version": "0.1.0",
 	"description": "This plugin template uses Typescript. If you are familiar with Javascript, Typescript will look very familiar. In fact, valid Javascript code is already valid Typescript code.",
 	"license": "ISC",
 	"scripts": {
